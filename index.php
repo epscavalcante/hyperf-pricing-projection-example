@@ -158,6 +158,8 @@ $app->addGroup(
             $input = new CreateLayerInput(
                 code: $this->request->input('code'),
                 type: $this->request->input('type'),
+                parentId: $this->request->input('parent_id', null),
+                value: $this->request->input('value', 0),
                 description: $this->request->input('description'),
             );
             $useCase = new CreateLayer(
@@ -181,6 +183,7 @@ $app->addGroup(
         });
     }
 );
+
 $app->addGroup(
     prefix: '/prices',
     callback: function () use ($app) {

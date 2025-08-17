@@ -11,6 +11,7 @@ use Src\Domain\Exceptions\ProductNotFoundException;
 use Src\Domain\Repositories\LayerRepository;
 use Src\Domain\Repositories\ProductRepository;
 use Src\Domain\Repositories\PriceRepository;
+use Src\Domain\Services\PriceCalculator;
 
 class CreatePrice
 {
@@ -36,6 +37,8 @@ class CreatePrice
         if ($priceExists) {
             throw new PriceAlreadExistsException;
         }
+
+        $finalPrice = PriceCalculator::calculate($input->value, $layer);
 
         $price = Price::create(
             layerId: $layer->getId(),

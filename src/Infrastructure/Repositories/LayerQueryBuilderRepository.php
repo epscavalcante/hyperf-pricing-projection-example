@@ -47,10 +47,11 @@ class LayerQueryBuilderRepository implements LayerRepository
         DB::table('layers')
             ->insert([
                 'id' => $layer->getId(),
+                'layer_id' => $layer->getParentId(),
                 'code' => $layer->code,
                 'type' => $layer->getType(),
                 'description' => $layer->description,
-                //'value' => $layer->value,
+                'value' => $layer->value,
             ]);
     }
 

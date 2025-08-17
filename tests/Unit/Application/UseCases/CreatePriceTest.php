@@ -5,6 +5,7 @@ use Src\Application\UseCases\CreatePrice\CreatePriceInput;
 use Src\Application\UseCases\CreatePrice\CreatePriceOutput;
 use Src\Domain\Entities\Layer;
 use Src\Domain\Entities\Product;
+use Src\Domain\Enums\LayerType;
 use Src\Domain\Exceptions\LayerNotFoundException;
 use Src\Domain\Exceptions\PriceAlreadExistsException;
 use Src\Domain\Exceptions\ProductNotFoundException;
@@ -114,7 +115,7 @@ test('Deve falhar criar um Price que já existe', function () {
     );
 })->throws(PriceAlreadExistsException::class);
 
-test('Deve criar um preço', function () {
+test('Deve criar um preço de uma layer base', function () {
     $layerRepository = Mockery::mock(LayerRepository::class);
     $layer = Layer::createSimpleLayer(
         code: 'layer',
@@ -147,6 +148,59 @@ test('Deve criar um preço', function () {
 
     $input = new CreatePriceInput(
         layerId: $layer->getId(),
+        productId: $product->getId(),
+        value: 250
+    );
+
+    $output = $useCase->execute(
+        input: $input
+    );
+
+    expect($output)->toBeInstanceOf(CreatePriceOutput::class);
+    expect($output->priceId)->toBeString();
+});
+
+
+
+test('Deve criar um preço de uma layer com desconto', function () {
+    $layerRepository = Mockery::mock(LayerRepository::class);
+    $baseLayer = Layer::createSimpleLayer(
+        code: 'BASE',
+    );
+    $discountLayer = Layer::create(
+        code: 'DISCOUNT_20',
+        type: LayerType::PERCENTAGE_DISCOUNT->value,
+        value: 15,
+        parentId: $baseLayer->getId(),
+    );
+    $layerRepository->shouldReceive('findById')
+        ->with($discountLayer->getId())
+        ->once()
+        ->andReturn($discountLayer);
+    $productRepository = Mockery::mock(ProductRepository::class);
+    $product = Product::create(
+        name: 'Produto'
+    );
+    $productRepository->shouldReceive('findById')
+        ->with($product->getId())
+        ->once()
+        ->andReturn($product);
+    $priceRepository = Mockery::mock(PriceRepository::class);
+    $priceRepository->shouldReceive('existsByLayerIdAndProductId')
+        ->with($discountLayer->getId(), $product->getId())
+        ->once()
+        ->andReturn(false);
+    $priceRepository->shouldReceive('save')
+        ->once();
+
+    $useCase = new CreatePrice(
+        layerRepository: $layerRepository,
+        priceRepository: $priceRepository,
+        productRepository: $productRepository,
+    );
+
+    $input = new CreatePriceInput(
+        layerId: $discountLayer->getId(),
         productId: $product->getId(),
         value: 250
     );
